@@ -1,5 +1,8 @@
 package com.pulse.pass.ticket;
 
-public class TicketStatus {
-    
+public enum TicketStatus {
+    RESERVED,
+    PAID,
+    CANCELLED,
+    USED
 }

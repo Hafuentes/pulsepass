@@ -1,5 +1,9 @@
 package com.pulse.pass.event;
 
-public class EventStatus {
-    
+public enum EventStatus {
+    DRAFT,
+    PUBLISHED,
+    SOLD_OUT,
+    CANCELLED,
+    FINISHED
 }

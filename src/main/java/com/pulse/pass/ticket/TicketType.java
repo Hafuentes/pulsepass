@@ -1,5 +1,8 @@
 package com.pulse.pass.ticket;
 
-public class TicketType {
-    
+public enum TicketType {
+    GENERAL,
+    VIP,
+    BACKSTAGE,
+    STUDENT
 }
