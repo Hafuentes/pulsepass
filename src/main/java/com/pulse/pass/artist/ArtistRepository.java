@@ -1,4 +1,4 @@
-package main.java.com.pulse.pass.artist;
+package com.pulse.pass.artist;
 
 import java.util.Optional;
 
