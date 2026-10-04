@@ -11,14 +11,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pulse.pass.artist.Artist;
-import com.pulse.pass.artist.ArtistRepository;
-import com.pulse.pass.event.Event;
-import com.pulse.pass.event.EventCategory;
-import com.pulse.pass.event.EventRepository;
-import com.pulse.pass.event.EventStatus;
-import com.pulse.pass.venue.Venue;
-import com.pulse.pass.venue.VenueRepository;
+import com.pulse.pass.domain.Artist;
+import com.pulse.pass.domain.Event;
+import com.pulse.pass.domain.EventCategory;
+import com.pulse.pass.domain.EventStatus;
+import com.pulse.pass.domain.Venue;
+import com.pulse.pass.repository.ArtistRepository;
+import com.pulse.pass.repository.EventRepository;
+import com.pulse.pass.repository.VenueRepository;
 
 /**
  * Cubre FR-ART-003/004, FR-SRC-001..003 y AC-003, AC-006, AC-007

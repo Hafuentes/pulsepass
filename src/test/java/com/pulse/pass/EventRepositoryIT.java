@@ -15,12 +15,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pulse.pass.event.Event;
-import com.pulse.pass.event.EventCategory;
-import com.pulse.pass.event.EventRepository;
-import com.pulse.pass.event.EventStatus;
-import com.pulse.pass.venue.Venue;
-import com.pulse.pass.venue.VenueRepository;
+import com.pulse.pass.domain.Event;
+import com.pulse.pass.domain.EventCategory;
+import com.pulse.pass.domain.EventStatus;
+import com.pulse.pass.domain.Venue;
+import com.pulse.pass.repository.EventRepository;
+import com.pulse.pass.repository.VenueRepository;
 
 /**
  * Cubre FR-EVT-001..006, QT-002 (Hibernate valida el esquema al levantar el contexto),
