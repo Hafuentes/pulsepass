@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pulse.pass.venue.Venue;
-import com.pulse.pass.venue.VenueRepository;
+import com.pulse.pass.domain.Venue;
+import com.pulse.pass.repository.VenueRepository;
 
 /**
  * Cubre FR-VEN-001..004 y AC-001, contra PostgreSQL real via Testcontainers (NFR-005).

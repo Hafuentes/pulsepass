@@ -13,10 +13,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pulse.pass.user.User;
-import com.pulse.pass.user.UserProfile;
-import com.pulse.pass.user.UserProfileRepository;
-import com.pulse.pass.user.UserRepository;
+import com.pulse.pass.domain.User;
+import com.pulse.pass.domain.UserProfile;
+import com.pulse.pass.repository.UserProfileRepository;
+import com.pulse.pass.repository.UserRepository;
 
 /**
  * Cubre FR-USR-001..004, QT-004 (relacion User 1:1 UserProfile) y AC-004

@@ -14,18 +14,18 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pulse.pass.event.Event;
-import com.pulse.pass.event.EventCategory;
-import com.pulse.pass.event.EventRepository;
-import com.pulse.pass.event.EventStatus;
-import com.pulse.pass.ticket.Ticket;
-import com.pulse.pass.ticket.TicketRepository;
-import com.pulse.pass.ticket.TicketStatus;
-import com.pulse.pass.ticket.TicketType;
-import com.pulse.pass.user.User;
-import com.pulse.pass.user.UserRepository;
-import com.pulse.pass.venue.Venue;
-import com.pulse.pass.venue.VenueRepository;
+import com.pulse.pass.domain.Event;
+import com.pulse.pass.domain.EventCategory;
+import com.pulse.pass.domain.EventStatus;
+import com.pulse.pass.domain.Ticket;
+import com.pulse.pass.domain.TicketStatus;
+import com.pulse.pass.domain.TicketType;
+import com.pulse.pass.domain.User;
+import com.pulse.pass.domain.Venue;
+import com.pulse.pass.repository.EventRepository;
+import com.pulse.pass.repository.TicketRepository;
+import com.pulse.pass.repository.UserRepository;
+import com.pulse.pass.repository.VenueRepository;
 
 /**
  * Cubre FR-TKT-001..008, FR-SRC-004, QT-006 (Ticket -> User, Ticket -> Event)
