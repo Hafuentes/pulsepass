@@ -1,6 +1,6 @@
 # PulsePass — Plataforma de Eventos, Artistas y Entradas
 
-Caso de estudio académico para la capa de persistencia con Java 21, Spring Boot 4, JPA, PostgreSQL y Flyway.
+Caso de estudio académico (persistencia, servicios y controladores REST) con Java 21, Spring Boot 4, JPA, PostgreSQL y Flyway.
 
 ## Requsitos previos
 
@@ -25,6 +25,70 @@ Las migraciones se encuentran en `src/main/resources/db/migration`;
 
 ## Ejecución de Pruebas de Integración
 Para ejecutar todas las pruebas contra una instancia real de PostgreSQL gestionada por Testcontainers:
+
+```bash
+./mvnw clean test
+```
+
+## Capa de Controladores REST (Fase 3)
+
+La API expone los 20 metodos de los Services mediante HTTP. Los Controllers solo dependen de Services, retornan DTOs dentro de `ResponseEntity` y los errores se centralizan en `GlobalExceptionHandler` (`@RestControllerAdvice`) usando el contrato `ErrorResponse`.
+
+### Endpoints principales
+
+| Metodo | Endpoint | Exito |
+|--------|----------|-------|
+| GET | `/api/venues/{code}` | 200 |
+| GET | `/api/venues/active` | 200 |
+| POST | `/api/events` | 201 |
+| GET | `/api/events/{eventCode}` | 200 |
+| GET | `/api/events/published` | 200 |
+| PATCH | `/api/events/{eventCode}/publish` | 200 |
+| POST | `/api/events/{eventCode}/artists/{artistId}` | 200 |
+| GET | `/api/events/by-artist?stageName=...` | 200 |
+| GET | `/api/events/{eventCode}/tickets/paid` | 200 |
+| GET | `/api/artists/{id}` | 200 |
+| GET | `/api/artists/by-stage-name?stageName=...` | 200 |
+| GET | `/api/artists/active` | 200 |
+| POST | `/api/users` | 201 |
+| GET | `/api/users/by-email?email=...` | 200 |
+| GET | `/api/users/by-username?username=...` | 200 |
+| POST | `/api/tickets` | 201 |
+| GET | `/api/tickets/{ticketCode}` | 200 |
+| GET | `/api/tickets/by-user?email=...` | 200 |
+| PATCH | `/api/tickets/{ticketCode}/cancel` | 200 |
+| PATCH | `/api/tickets/{ticketCode}/use` | 200 |
+
+### Codigos de error
+
+| Condicion | HTTP |
+|-----------|------|
+| Bean Validation / JSON mal formado / parametro invalido | 400 |
+| `ResourceNotFoundException` | 404 |
+| `DuplicateResourceException`, `BusinessRuleException` | 409 |
+| Error inesperado (sin exponer detalles internos) | 500 |
+
+Ejemplo de `ErrorResponse`:
+
+```json
+{
+  "timestamp": "2026-10-04T20:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "details": { "eventCode": "Event code is required" }
+}
+```
+
+### Pruebas de Controller
+
+Las pruebas usan `@WebMvcTest`, `MockMvc` y `@MockitoBean` (Services simulados): no requieren Docker ni PostgreSQL.
+
+```bash
+./mvnw test -Dtest='*ControllerTest'
+```
+
+Para ejecutar toda la suite (incluye los `*IT` con Testcontainers, requiere Docker):
 
 ```bash
 ./mvnw clean test
