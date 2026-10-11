@@ -8,8 +8,9 @@ import jakarta.validation.constraints.NotNull;
 
 /** Sin precio: el precio lo calcula el sistema (ver TicketPriceCalculator). */
 public record PurchaseTicketRequest(
-        @NotBlank @Email String userEmail,
-        @NotBlank String eventCode,
-        @NotNull TicketType type
+        @NotBlank(message = "User email is required")
+        @Email(message = "User email must be a valid email") String userEmail,
+        @NotBlank(message = "Event code is required") String eventCode,
+        @NotNull(message = "Ticket type is required") TicketType type
 ) {
 }
