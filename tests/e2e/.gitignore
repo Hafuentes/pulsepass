@@ -1,0 +1,10 @@
+# Mantener en Git solo la plantilla sin secretos; ignorar entornos locales exportados
+postman/*.postman_environment.json
+!postman/PulsePass-local.postman_environment.json
+postman/*-private.postman_environment.json
+postman/*-personal.postman_environment.json
+postman/*-local-values.postman_environment.json
+
+# Evidencia local: revisar y anonimizar antes de compartir
+evidence/
+*.har

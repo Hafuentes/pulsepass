@@ -160,7 +160,10 @@ class TicketRepositoryIT {
 
         List<Ticket> futuros = ticketRepository.findTicketsForFutureEvents(ahora);
 
+        // La consulta es global y otras ITs (p. ej. SecurityFlowIT) confirman tickets en la misma BD:
+        // se comparan solo los tickets creados por esta prueba.
         assertThat(futuros).extracting(Ticket::getTicketCode)
+                .filteredOn(codigo -> codigo.startsWith("TCK-FUT-"))
                 .containsExactly("TCK-FUT-02", "TCK-FUT-01");
     }
 }

@@ -1,6 +1,6 @@
 # PulsePass — Plataforma de Eventos, Artistas y Entradas
 
-Caso de estudio académico (persistencia, servicios y controladores REST) con Java 21, Spring Boot 4, JPA, PostgreSQL y Flyway.
+Caso de estudio académico (persistencia, servicios, controladores REST y seguridad) con Java 21, Spring Boot 4, JPA, PostgreSQL y Flyway.
 
 ## Requsitos previos
 
@@ -22,6 +22,7 @@ Las migraciones se encuentran en `src/main/resources/db/migration`;
 - `V1__create__schema.sql`: Creación de las tablas `venues`, `events`, `artists`, `events_artists`, `users`, `user_profiles` y `tickets`.
 - `V2__insert_initial_artists.sql`: Inserción del catálogo inicial de artistas.
 - `V3__add_streaming_url_to_event.sql`: Evolución de la tabla `events` para soportar URLs de streaming.
+- `V4__security_credentials_roles.sql`: Fase 4. Tablas `user_credentials` (hash BCrypt, 1:1 con `users`) y `user_roles` (USER/STAFF/ADMIN). Los usuarios previos quedan **sin credenciales** (no pueden iniciar sesión hasta una activación segura; no se asignan contraseñas por defecto).
 
 ## Ejecución de Pruebas de Integración
 Para ejecutar todas las pruebas contra una instancia real de PostgreSQL gestionada por Testcontainers:
@@ -64,6 +65,8 @@ La API expone los 20 metodos de los Services mediante HTTP. Los Controllers solo
 | Condicion | HTTP |
 |-----------|------|
 | Bean Validation / JSON mal formado / parametro invalido | 400 |
+| Sin identidad valida (sin token, expirado, manipulado, usuario inactivo, login incorrecto) — Fase 4 | 401 |
+| Identidad valida sin permiso (rol insuficiente o recurso ajeno) — Fase 4 | 403 |
 | `ResourceNotFoundException` | 404 |
 | `DuplicateResourceException`, `BusinessRuleException` | 409 |
 | Error inesperado (sin exponer detalles internos) | 500 |
@@ -130,3 +133,95 @@ El modelo actual actual asume una capacidad global por venue. Para evolucionarlo
 
 - Se aplicaría control de concurrencia a nivel de base de datos (bloque optimista o pesimista, por ejemplo `@Version`) para garantizar que dos usuarios no compren simultáneamente el último asiento disponible.
 
+
+
+## Capa de Seguridad (Fase 4): Spring Security + JJWT
+
+API **stateless** con JWT firmado (HS256, JJWT 0.13), contraseñas con BCrypt y tres roles (`USER`, `STAFF`, `ADMIN`).
+Se conservan las 20 rutas, los DTOs y las reglas de negocio de las fases 1–3.
+
+### Variables de entorno
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+| `PULSEPASS_JWT_SECRET_BASE64` | **Sí** | Base64 de al menos 32 bytes aleatorios. La app **no arranca** si falta o es débil. Genérela con `openssl rand -base64 32`. |
+| `PULSEPASS_JWT_ISSUER` | No | Emisor esperado (por defecto `pulsepass-api`). |
+| `PULSEPASS_SEED_ADMIN_PASSWORD` / `PULSEPASS_SEED_STAFF_PASSWORD` | Solo perfil `local-seed` | Contraseñas (mín. 12 caracteres) de las cuentas de demostración `admin` y `laura.staff`. |
+| `PULSEPASS_CORS_ALLOWED_ORIGINS` | No | Orígenes CORS **explícitos** separados por coma. Vacío (por defecto) = CORS desactivado. Un comodín (`*`) hace fallar el arranque. |
+| `PULSEPASS_ACTIVATE_USERNAME` / `PULSEPASS_ACTIVATE_PASSWORD` | Solo perfil `legacy-activation` | Usuario preexistente a activar y su contraseña (12–72 bytes). |
+
+Plantilla en `.env.example` (no versionar `.env`). La duración del token es `pulsepass.security.jwt.access-token-ttl` (por defecto `PT15M` = 900 s).
+
+```bash
+export PULSEPASS_JWT_SECRET_BASE64=$(openssl rand -base64 32)
+export PULSEPASS_SEED_ADMIN_PASSWORD='UnaFraseAdminLarga2026!'
+export PULSEPASS_SEED_STAFF_PASSWORD='UnaFraseStaffLarga2026!'
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local-seed   # crea admin y laura.staff (solo desarrollo)
+```
+
+Los roles `STAFF`/`ADMIN` **nunca** se asignan por HTTP: el registro público siempre crea `ROLE_USER`.
+
+### Activación de usuarios preexistentes (legados)
+
+La migración `V4` deja a los usuarios anteriores a la Fase 4 con rol `USER` pero **sin credenciales**: no pueden iniciar sesión y **no se les asigna ninguna contraseña por defecto ni compartida**. Para activar a un usuario concreto de forma controlada:
+
+```bash
+export PULSEPASS_JWT_SECRET_BASE64=$(openssl rand -base64 32)
+export PULSEPASS_ACTIVATE_USERNAME='usuario-legado'
+export PULSEPASS_ACTIVATE_PASSWORD='UnaFraseUnicaParaEsteUsuario2026!'
+./mvnw spring-boot:run -Dspring-boot.run.profiles=legacy-activation   # detener la app tras ver el log de activación
+```
+
+El procedimiento (`LegacyUserActivationRunner`) solo activa usuarios existentes **sin** credencial (nunca sobrescribe un hash), valida la contraseña, guarda únicamente el hash BCrypt, **nunca** asigna `STAFF`/`ADMIN` y no registra la contraseña. Como el MVP aún no incluye "cambio de contraseña", entregue la contraseña por un canal seguro.
+
+### Trazabilidad y CORS
+
+* Cada request recibe un **`X-Request-Id`** (se reutiliza el entrante solo si tiene formato seguro; si no, se genera un UUID). Aparece en la respuesta y en todos los logs (`[requestId]`), incluidos login correcto/fallido y denegaciones 401/403, sin registrar contraseñas, hashes ni tokens.
+* **CORS** se configura con `PULSEPASS_CORS_ALLOWED_ORIGINS` (orígenes explícitos, sin credenciales). Con el valor por defecto (vacío) no se permite ningún origen cruzado.
+
+### Endpoints nuevos y cambios de contrato
+
+| Método | Ruta | Acceso | Resultado |
+|--------|------|--------|-----------|
+| POST | `/api/auth/login` | Público | 200 `{accessToken, tokenType:"Bearer", expiresIn:900}`; 401 genérico si falla |
+| GET | `/api/auth/me` | Bearer | 200 `{id, username, email, roles}` |
+| POST | `/api/users` | Público | 201 `UserResponse`. **`RegisterUserRequest` ahora exige `password`** (12–72 caracteres/bytes) |
+
+```bash
+curl -X POST localhost:8080/api/users -H 'Content-Type: application/json' -d '{"username":"andrea","email":"andrea@mail.com","firstName":"Andrea","lastName":"Lopez","birthDate":"1995-05-20","password":"UnaFraseSeguraLarga2026!"}'
+curl -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"identifier":"andrea","password":"UnaFraseSeguraLarga2026!"}'
+curl localhost:8080/api/auth/me -H "Authorization: Bearer <accessToken>"
+```
+
+### Matriz de autorización
+
+| Operación | Acceso |
+|-----------|--------|
+| `GET /api/venues/{code}`, `/api/venues/active`, `/api/artists/**` | Público |
+| `GET /api/events/published` | Público |
+| `GET /api/events/{eventCode}` | Público solo si el evento está `PUBLISHED`; otros estados: `STAFF`/`ADMIN` (anónimo → 401, USER → 403) |
+| `GET /api/events/by-artist` | Público; la lista se **filtra**: solo eventos `PUBLISHED` (`STAFF`/`ADMIN` ven todos los estados) |
+| `POST /api/events`, `PATCH /api/events/{c}/publish`, `POST /api/events/{c}/artists/{id}` | `ADMIN` |
+| `GET /api/events/{c}/tickets/paid`, `PATCH /api/tickets/{t}/use` | `STAFF`/`ADMIN` |
+| `POST /api/tickets` | `USER`; `userEmail` debe ser el del principal |
+| `GET /api/tickets/{t}` | Propietario, `STAFF`/`ADMIN` |
+| `GET /api/tickets/by-user`, `GET /api/users/by-email`, `GET /api/users/by-username` | El propio usuario o `ADMIN` |
+| `PATCH /api/tickets/{t}/cancel` | Propietario o `ADMIN` (más las reglas del Service) |
+
+* Rutas sin regla explícita: **denegadas por defecto** (`anyRequest().authenticated()`).
+* **Anti-IDOR**: la propiedad se verifica en los Services con `@PreAuthorize("@authz...")` contra el **ID persistente** del principal (`AuthorizationService`), nunca contra datos del request.
+* **Política de objeto ajeno**: 403 consistente (también para un ticket inexistente consultado por un `USER`, para no revelar existencia).
+* `401` = sin identidad válida (sin token, expirado, manipulado, usuario inactivo); `403` = identidad válida sin permiso. Ambos usan `ErrorResponse`.
+* Estado y roles se **revalidan contra la base de datos en cada request**: desactivar un usuario o quitarle un rol surte efecto de inmediato, aunque su JWT siga vigente.
+
+### Limitaciones conocidas del MVP (no implementadas)
+
+Refresh tokens, revocación por `jti`/logout con denylist, límite de intentos de login, rotación de claves, MFA y recuperación de contraseña. `STAFF` es global (el dominio aún no asigna personal a eventos): restringirlo por evento antes de producción. Use HTTPS fuera de localhost y un gestor de secretos.
+
+### Pruebas
+
+```bash
+./mvnw clean test
+```
+
+Incluye `JwtServiceTest`, `JwtAuthenticationFilterTest`, `CustomUserDetailsServiceTest`, `RequestIdFilterTest`, `SecurityConfigCorsTest`, `AuthServiceTest`, `AuthorizationServiceTest`, `LegacyUserActivationRunnerTest`, `SecurityRulesTest` y `CorsConfigTest` (MockMvc con la cadena de filtros real), más `SecurityFlowIT` y `FlywayMigrationIT` (PostgreSQL con Testcontainers: login real, anti-IDOR, borradores ocultos, migración V4 sobre esquema nuevo y ya migrado). El perfil de pruebas usa una clave HMAC ficticia en `src/test/resources/config/application.properties`.

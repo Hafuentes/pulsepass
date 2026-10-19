@@ -1,0 +1,623 @@
+{
+  "info": {
+    "_postman_id": "c7a4152e-3128-4cd2-99d3-e2e0a11a2026",
+    "name": "PulsePass Manual E2E",
+    "description": "Colección manual para las 22 rutas E2E de PulsePass. Usa Postman Desktop. Sin scripts, Runner ni Newman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Venues",
+      "item": [
+        {
+          "name": "E2E-VEN-01 - Obtener sede por código",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/{{venueCode}}"
+            },
+            "description": "Anónimo. Esperado: 200 y active=true."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-VEN-02 - Listar sedes activas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/active"
+            },
+            "description": "Anónimo. Esperado: 200; todas las filas deben estar activas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Artists",
+      "item": [
+        {
+          "name": "E2E-ART-01 - Obtener artista por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/{{artistId}}"
+            },
+            "description": "Anónimo. Esperado: 200."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-ART-02 - Buscar artista por stageName",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/by-stage-name?stageName={{stageName}}"
+            },
+            "description": "Anónimo. Esperado: 200."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-ART-03 - Listar artistas activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/active"
+            },
+            "description": "Anónimo. Esperado: 200."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Users",
+      "item": [
+        {
+          "name": "E2E-USER-01 - Registrar usuario USER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users"
+            },
+            "description": "Público. Esperado: 201; la respuesta no debe incluir password ni hash. El endpoint asigna USER.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userAUsername}}\",\n  \"email\": \"{{userAEmail}}\",\n  \"firstName\": \"E2E\",\n  \"lastName\": \"User A\",\n  \"phone\": \"3000000001\",\n  \"city\": \"Bogotá\",\n  \"birthDate\": \"1995-04-23\",\n  \"password\": \"{{userAPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-USER-02 - Consultar usuario por email",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-email?email={{userAEmail}}"
+            },
+            "description": "USER propio: esperado 200. Sustituir el token/email para comprobar ajeno 403; ADMIN puede consultar cualquier usuario."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-USER-03 - Consultar usuario por username",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-username?username={{userAUsername}}"
+            },
+            "description": "USER propio: esperado 200. Sustituir el token/username para comprobar ajeno 403; ADMIN puede consultar cualquier usuario."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Auth",
+      "item": [
+        {
+          "name": "E2E-AUTH-01 - Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login"
+            },
+            "description": "Público. Esperado: 200 y token Bearer. Para el caso por email cambia identifier a userAEmail. No guardar el token en la colección.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userAUsername}}\",\n  \"password\": \"{{userAPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-AUTH-02 - Consultar perfil autenticado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me"
+            },
+            "description": "Esperado: 200 y el actor/rol actual. Probar No Auth y Bearer mal formado en solicitudes manuales separadas; ambos deben dar 401."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Events",
+      "item": [
+        {
+          "name": "E2E-EVT-01 - Crear evento DRAFT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events"
+            },
+            "description": "ADMIN esperado: 201 y status DRAFT. USER/STAFF: 403; anónimo: 401. No enviar status en el body.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"{{draftEventCode}}\",\n  \"name\": \"PulsePass E2E Draft\",\n  \"description\": \"Evento para pruebas manuales E2E.\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2030-12-15T20:00:00\",\n  \"minimumAge\": 0,\n  \"venueCode\": \"{{venueCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-EVT-02 - Consultar evento por código",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}"
+            },
+            "description": "ADMIN/STAFF esperado: 200 para DRAFT; USER recibe 403 y anónimo 401. Para evento PUBLISHED la consulta pública devuelve 200."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-EVT-03 - Listar eventos publicados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/published"
+            },
+            "description": "Público. Esperado: 200; incluye PUBLISHED y excluye DRAFT."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-EVT-04 - Publicar evento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}/publish"
+            },
+            "description": "ADMIN: 200 y transición DRAFT→PUBLISHED. USER/STAFF: 403. Sin body."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-EVT-05 - Asociar artista a evento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}/artists/{{artistId}}"
+            },
+            "description": "ADMIN: 200. Repetir artista ya asociado: 409 y no duplicar asociación. USER/STAFF: 403."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-EVT-06 - Buscar eventos por artista",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/by-artist?stageName={{stageName}}"
+            },
+            "description": "Público: 200 y solo eventos PUBLISHED. STAFF/ADMIN pueden consultar eventos operativos, incluido DRAFT."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - Tickets",
+      "item": [
+        {
+          "name": "E2E-TKT-01 - Comprar ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets"
+            },
+            "description": "USER compra para su propio email: 201 y PAID. userEmail de otro actor: 403. STAFF/ADMIN no compran como USER.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userAEmail}}\",\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"type\": \"GENERAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-TKT-02 - Consultar ticket por código",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUseCode}}"
+            },
+            "description": "Propietario: 200. Otro USER: 403. STAFF/ADMIN: 200 para consulta operativa."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-TKT-03 - Listar tickets de usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/by-user?email={{userAEmail}}"
+            },
+            "description": "USER consulta propio: 200; otro USER: 403; ADMIN puede consultar cualquier email."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-TKT-04 - Listar tickets pagados del evento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{publishedEventCode}}/tickets/paid"
+            },
+            "description": "STAFF/ADMIN: 200 y lista solo PAID. USER: 403."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-TKT-05 - Cancelar ticket",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelCode}}/cancel"
+            },
+            "description": "Propietario/ADMIN según autorización: 200 y CANCELLED. Otro USER: 403; repetir transición: 409. Sin body."
+          },
+          "response": []
+        },
+        {
+          "name": "E2E-TKT-06 - Marcar ticket como usado",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUseCode}}/use"
+            },
+            "description": "STAFF/ADMIN: 200 y USED. USER: 403; repetir transición: 409. Sin body."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

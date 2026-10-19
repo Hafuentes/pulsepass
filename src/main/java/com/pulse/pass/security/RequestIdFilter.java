@@ -1,0 +1,50 @@
+package com.pulse.pass.security;
+
+import java.io.IOException;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+/**
+ * NFR-SEC006: asigna un ID a cada request y lo expone en el MDC ("requestId") y en la respuesta
+ * (X-Request-Id), de modo que logins correctos/fallidos y denegaciones 401/403 sean trazables.
+ *
+ * Se ejecuta antes que la cadena de Spring Security. Un ID entrante solo se reutiliza si tiene un
+ * formato seguro (evita inyeccion en logs); en otro caso se genera un UUID.
+ */
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class RequestIdFilter extends OncePerRequestFilter {
+
+    public static final String HEADER = "X-Request-Id";
+    public static final String MDC_KEY = "requestId";
+
+    private static final Pattern SAFE_ID = Pattern.compile("^[A-Za-z0-9._-]{8,64}$");
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        String incoming = request.getHeader(HEADER);
+        String requestId = incoming != null && SAFE_ID.matcher(incoming).matches()
+                ? incoming
+                : UUID.randomUUID().toString();
+
+        MDC.put(MDC_KEY, requestId);
+        response.setHeader(HEADER, requestId);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove(MDC_KEY);
+        }
+    }
+}

@@ -12,6 +12,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
+
+import com.pulse.pass.security.RestAccessDeniedHandler;
+import com.pulse.pass.security.RestAuthenticationEntryPoint;
+import com.pulse.pass.security.SecurityConfig;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,10 +27,8 @@ import com.pulse.pass.exception.ResourceNotFoundException;
 import com.pulse.pass.service.VenueService;
 
 @WebMvcTest(VenueController.class)
-class VenueControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+@Import({SecurityConfig.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class})
+class VenueControllerTest extends AbstractSecuredControllerTest {
 
     @MockitoBean
     private VenueService venueService;

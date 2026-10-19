@@ -2,7 +2,9 @@ package com.pulse.pass.service.impl;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -149,7 +151,7 @@ public class EventServiceImpl implements EventService {
         return eventRepository.findEventsByArtistStageName(artist.getStageName())
                 .stream()
                 .map(eventMapper::toSummary)
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new)); // mutable: requerido por @PostFilter
     }
 
     private Event getEvent(String eventCode) {
