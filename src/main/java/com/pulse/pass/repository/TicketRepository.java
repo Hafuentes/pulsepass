@@ -42,4 +42,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /** FR-SVC-015: tickets de un usuario (email sin distinguir mayusculas), mas recientes primero. */
     List<Ticket> findByUser_EmailIgnoreCaseOrderByPurchaseDateDesc(String email);
+
+    /** Fase 4 (anti-IDOR): ID persistente del propietario de un ticket, sin cargar la entidad. */
+    @Query("SELECT t.user.id FROM Ticket t WHERE t.ticketCode = :ticketCode")
+    Optional<Long> findOwnerIdByTicketCode(@Param("ticketCode") String ticketCode);
 }

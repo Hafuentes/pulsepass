@@ -13,11 +13,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
+
+import com.pulse.pass.security.RestAccessDeniedHandler;
+import com.pulse.pass.security.RestAuthenticationEntryPoint;
+import com.pulse.pass.security.SecurityConfig;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,12 +42,17 @@ import com.pulse.pass.exception.ResourceNotFoundException;
 import com.pulse.pass.service.EventService;
 
 @WebMvcTest(EventController.class)
-class EventControllerTest {
+@Import({SecurityConfig.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class})
+@WithMockUser(roles = "ADMIN")
+class EventControllerTest extends AbstractSecuredControllerTest {
+
+    @BeforeEach
+    void allowEventVisibility() {
+        when(authz.canViewEvent(any())).thenReturn(true);
+        when(authz.canViewEventSummary(any())).thenReturn(true);
+    }
 
     private static final LocalDateTime DATE = LocalDateTime.of(2030, 12, 1, 20, 0);
-
-    @Autowired
-    private MockMvc mockMvc;
 
     @MockitoBean
     private EventService eventService;
@@ -162,7 +175,7 @@ class EventControllerTest {
 
     @Test
     void TEST_CTRL_EVT_005_findPublished_returns200() throws Exception {
-        when(eventService.findPublishedEvents()).thenReturn(List.of(summary()));
+        when(eventService.findPublishedEvents()).thenReturn(new ArrayList<>(List.of(summary())));
 
         mockMvc.perform(get("/api/events/published"))
                 .andExpect(status().isOk())
@@ -232,7 +245,7 @@ class EventControllerTest {
 
     @Test
     void TEST_CTRL_EVT_009_findByArtist_returns200() throws Exception {
-        when(eventService.findByArtist("Solar Beat")).thenReturn(List.of(summary()));
+        when(eventService.findByArtist("Solar Beat")).thenReturn(new ArrayList<>(List.of(summary())));
 
         mockMvc.perform(get("/api/events/by-artist").param("stageName", "Solar Beat"))
                 .andExpect(status().isOk())

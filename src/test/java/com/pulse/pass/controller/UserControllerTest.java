@@ -12,9 +12,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
+
+import com.pulse.pass.security.RestAccessDeniedHandler;
+import com.pulse.pass.security.RestAuthenticationEntryPoint;
+import com.pulse.pass.security.SecurityConfig;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,13 +30,22 @@ import com.pulse.pass.dto.request.RegisterUserRequest;
 import com.pulse.pass.dto.response.UserResponse;
 import com.pulse.pass.exception.DuplicateResourceException;
 import com.pulse.pass.exception.ResourceNotFoundException;
+import com.pulse.pass.service.AuthService;
 import com.pulse.pass.service.UserService;
 
 @WebMvcTest(UserController.class)
-class UserControllerTest {
+@Import({SecurityConfig.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class})
+@WithMockUser(roles = "USER")
+class UserControllerTest extends AbstractSecuredControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @MockitoBean
+    private AuthService authService;
+
+    @BeforeEach
+    void allowOwnership() {
+        when(authz.canAccessUserByEmail(any())).thenReturn(true);
+        when(authz.canAccessUserByUsername(any())).thenReturn(true);
+    }
 
     @MockitoBean
     private UserService userService;
@@ -47,13 +63,14 @@ class UserControllerTest {
               "lastName": "Lopez",
               "phone": "3001112233",
               "city": "Santa Marta",
-              "birthDate": "1995-05-20"
+              "birthDate": "1995-05-20",
+              "password": "UnaFraseSeguraLarga2026!"
             }
             """;
 
     @Test
     void TEST_CTRL_USR_001_register_valid_returns201() throws Exception {
-        when(userService.register(any(RegisterUserRequest.class))).thenReturn(user());
+        when(authService.register(any(RegisterUserRequest.class))).thenReturn(user());
 
         mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
                 .andExpect(status().isCreated())
@@ -62,7 +79,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.email").value("andrea@mail.com"))
                 .andExpect(jsonPath("$.active").value(true));
 
-        verify(userService).register(any(RegisterUserRequest.class));
+        verify(authService).register(any(RegisterUserRequest.class));
     }
 
     @Test
@@ -76,7 +93,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("Validation failed"))
                 .andExpect(jsonPath("$.details.email").exists());
 
-        verify(userService, never()).register(any());
+        verify(authService, never()).register(any());
     }
 
     @Test
@@ -88,12 +105,12 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.details.lastName").exists())
                 .andExpect(jsonPath("$.details.birthDate").exists());
 
-        verify(userService, never()).register(any());
+        verify(authService, never()).register(any());
     }
 
     @Test
     void TEST_CTRL_USR_003_register_duplicate_returns409() throws Exception {
-        when(userService.register(any(RegisterUserRequest.class)))
+        when(authService.register(any(RegisterUserRequest.class)))
                 .thenThrow(new DuplicateResourceException("Username already exists."));
 
         mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
