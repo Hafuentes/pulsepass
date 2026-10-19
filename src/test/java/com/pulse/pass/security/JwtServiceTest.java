@@ -68,8 +68,11 @@ class JwtServiceTest {
     @Test
     void tamperedSignature_isRejected() {
         String token = service().generateToken(1L);
-        char last = token.charAt(token.length() - 1);
-        String tampered = token.substring(0, token.length() - 1) + (last == 'A' ? 'B' : 'A');
+        String[] parts = token.split("\\.");
+        String signature = parts[2];
+        char first = signature.charAt(0);
+        String tamperedSignature = (first == 'A' ? 'B' : 'A') + signature.substring(1);
+        String tampered = parts[0] + "." + parts[1] + "." + tamperedSignature;
 
         assertThatThrownBy(() -> service().parseUserId(tampered)).isInstanceOf(InvalidTokenException.class);
     }
