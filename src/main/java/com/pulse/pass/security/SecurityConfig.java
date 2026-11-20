@@ -60,11 +60,15 @@ public class SecurityConfig {
                         // Autenticacion y registro
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
-                        // Venues y artistas (publicos)
+                        // Catalogos publicos de lectura; su alta solo corresponde a ADMIN.
+                        .requestMatchers(HttpMethod.POST, "/api/venues", "/api/artists").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/venues/active", "/api/venues/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/artists/active", "/api/artists/by-stage-name",
                                 "/api/artists/*").permitAll()
-                        // Eventos: lectura publica (los no publicados se filtran en EventService)
+                        // Administración: listado completo (incluye borradores), siempre ADMIN.
+                        // Debe ir antes del matcher público /api/events/*.
+                        .requestMatchers(HttpMethod.GET, "/api/events/admin").hasRole("ADMIN")
+                        // Eventos: lectura pública; EventService oculta los borradores.
                         .requestMatchers(HttpMethod.GET, "/api/events/published", "/api/events/by-artist",
                                 "/api/events/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/events").hasRole("ADMIN")

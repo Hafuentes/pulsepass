@@ -157,6 +157,10 @@ public class TicketServiceImpl implements TicketService {
     public TicketResponse markAsUsed(String ticketCode) {
         Ticket ticket = getTicket(ticketCode);
 
+        if (ticket.getEvent().getStatus() == EventStatus.CANCELLED) {
+            throw new BusinessRuleException("A ticket for a cancelled event cannot be used: " + ticketCode);
+        }
+
         if (ticket.getStatus() == TicketStatus.CANCELLED) {
             throw new BusinessRuleException("A CANCELLED ticket can never be used: " + ticketCode);
         }

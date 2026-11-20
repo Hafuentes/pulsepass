@@ -1,0 +1,9 @@
+import { Link, useParams } from 'react-router'
+import { useArtist } from '../features/artists/hooks'
+import { useEventsByArtist } from '../features/events/hooks'
+import { RUTAS } from '../lib/rutas'
+import { Badge, EmptyState, ErrorState, LoadingGrid, SectionTitle } from '../components/UI'
+import { EventCard } from '../components/EventCard'
+import NoEncontrada from './NoEncontrada'
+
+export default function DetalleArtista() { const { id = '' } = useParams(); const validId = /^\d+$/.test(id) && Number(id) > 0; const artist = useArtist(id, validId); const events = useEventsByArtist(artist.data?.stageName ?? ''); if (!validId) return <NoEncontrada/>; if (artist.isPending) return <p className="py-20 text-center text-slate-500">Cargando perfil…</p>; if (artist.isError) return <ErrorState error={artist.error}/>; return <><Link to={RUTAS.artistas} className="text-sm text-violet-700">← Artistas</Link><div className="surface my-6 rounded-[2rem] p-8 sm:p-12"><div className="grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-br from-violet-500/40 to-cyan-400/20 text-4xl">♫</div><p className="eyebrow mt-7">Artista</p><h1 className="page-title mt-2 text-4xl">{artist.data.stageName}</h1><p className="mt-3 text-slate-500">{[artist.data.genre,artist.data.country].filter(Boolean).join(' · ') || 'Talento en PulsePass'}</p><Badge tone={artist.data.active ? 'success' : 'neutral'}>{artist.data.active ? 'Activo' : 'Inactivo'}</Badge></div><SectionTitle title="Eventos del artista"/>{events.isPending ? <LoadingGrid/> : events.isError ? <ErrorState error={events.error}/> : events.data.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{events.data.map((e) => <EventCard key={e.eventCode} event={e}/>)}</div> : <EmptyState title="Sin eventos por ahora" description="Este artista todavía no tiene eventos publicados."/>}</> }

@@ -15,6 +15,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     /** FR-EVT-002: recuperar un evento por su eventCode unico. */
     Optional<Event> findByEventCode(String eventCode);
 
+    /** Administración: todos los eventos (incluye borradores y estados finales), ordenados por fecha. */
+    List<Event> findAllByOrderByEventDateAsc();
+
     /** FR-EVT-005: eventos PUBLISHED ordenados por fecha ascendente. */
     List<Event> findByStatusOrderByEventDateAsc(EventStatus status);
 

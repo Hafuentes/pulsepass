@@ -189,6 +189,28 @@ class EventControllerTest extends AbstractSecuredControllerTest {
     }
 
     @Test
+    void adminList_returnsAllEventsIncludingDrafts() throws Exception {
+        EventSummaryResponse draft = new EventSummaryResponse(2L, "DRAFT-01", "Evento borrador", EventCategory.CULTURE,
+                EventStatus.DRAFT, DATE, "VEN-SMR-01", "Marina Convention Center", "Santa Marta");
+        when(eventService.findAllForAdmin()).thenReturn(List.of(draft, summary()));
+
+        mockMvc.perform(get("/api/events/admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].status").value("DRAFT"));
+
+        verify(eventService).findAllForAdmin();
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void adminList_deniesRegularUser() throws Exception {
+        mockMvc.perform(get("/api/events/admin"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(eventService);
+    }
+
+    @Test
     void TEST_CTRL_EVT_006_publish_valid_returns200() throws Exception {
         when(eventService.publish("CMF-2026")).thenReturn(event(EventStatus.PUBLISHED));
 

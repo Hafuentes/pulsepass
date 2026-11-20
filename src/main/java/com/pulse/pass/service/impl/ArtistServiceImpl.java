@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pulse.pass.dto.response.ArtistResponse;
+import com.pulse.pass.dto.request.CreateArtistRequest;
+import com.pulse.pass.domain.Artist;
+import com.pulse.pass.exception.DuplicateResourceException;
 import com.pulse.pass.exception.ResourceNotFoundException;
 import com.pulse.pass.mapper.ArtistMapper;
 import com.pulse.pass.repository.ArtistRepository;
@@ -20,6 +23,18 @@ public class ArtistServiceImpl implements ArtistService {
     public ArtistServiceImpl(ArtistRepository artistRepository, ArtistMapper artistMapper) {
         this.artistRepository = artistRepository;
         this.artistMapper = artistMapper;
+    }
+
+    @Override
+    @Transactional
+    public ArtistResponse create(CreateArtistRequest request) {
+        String stageName = request.stageName().trim();
+        if (artistRepository.existsByStageNameIgnoreCase(stageName)) {
+            throw new DuplicateResourceException("Artist stage name already exists: " + stageName);
+        }
+        Artist artist = new Artist(stageName, request.country() == null ? null : request.country().trim(),
+                request.genre() == null ? null : request.genre().trim(), true);
+        return artistMapper.toResponse(artistRepository.save(artist));
     }
 
     /** BR-ARTIST-001 */

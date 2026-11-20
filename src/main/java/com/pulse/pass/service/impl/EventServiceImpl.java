@@ -8,12 +8,15 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.pulse.pass.domain.Artist;
 import com.pulse.pass.domain.Event;
 import com.pulse.pass.domain.EventStatus;
 import com.pulse.pass.domain.Venue;
 import com.pulse.pass.dto.request.CreateEventRequest;
+import com.pulse.pass.dto.request.ChangeEventStatusRequest;
+import com.pulse.pass.dto.request.UpdateEventRequest;
 import com.pulse.pass.dto.response.EventResponse;
 import com.pulse.pass.dto.response.EventSummaryResponse;
 import com.pulse.pass.exception.BusinessRuleException;
@@ -23,27 +26,68 @@ import com.pulse.pass.mapper.EventMapper;
 import com.pulse.pass.repository.ArtistRepository;
 import com.pulse.pass.repository.EventRepository;
 import com.pulse.pass.repository.VenueRepository;
+import com.pulse.pass.repository.TicketRepository;
 import com.pulse.pass.service.EventService;
 
 @Service
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
+    private final TicketRepository ticketRepository;
     private final VenueRepository venueRepository;
     private final ArtistRepository artistRepository;
     private final EventMapper eventMapper;
     private final Clock clock;
 
+    @Autowired
     public EventServiceImpl(EventRepository eventRepository,
+                            TicketRepository ticketRepository,
                             VenueRepository venueRepository,
                             ArtistRepository artistRepository,
                             EventMapper eventMapper,
                             Clock clock) {
         this.eventRepository = eventRepository;
+        this.ticketRepository = ticketRepository;
         this.venueRepository = venueRepository;
         this.artistRepository = artistRepository;
         this.eventMapper = eventMapper;
         this.clock = clock;
+    }
+
+    /** Compatibility constructor for focused unit tests of operations that do not inspect tickets. */
+    public EventServiceImpl(EventRepository eventRepository,
+                            VenueRepository venueRepository,
+                            ArtistRepository artistRepository,
+                            EventMapper eventMapper,
+                            Clock clock) {
+        this(eventRepository, null, venueRepository, artistRepository, eventMapper, clock);
+    }
+
+    @Override
+    @Transactional
+    public EventResponse update(String eventCode, UpdateEventRequest request) {
+        Event event = getEvent(eventCode);
+        if (event.getStatus() == EventStatus.CANCELLED || event.getStatus() == EventStatus.FINISHED) {
+            throw new BusinessRuleException("Cannot edit a %s event: %s.".formatted(event.getStatus(), eventCode));
+        }
+        if (ticketRepository.existsByEvent_EventCode(eventCode)) {
+            throw new BusinessRuleException("Cannot edit an event that has tickets. Cancel it instead.");
+        }
+        Venue venue = venueRepository.findByCode(request.venueCode())
+                .orElseThrow(() -> new ResourceNotFoundException("Venue not found: " + request.venueCode()));
+        if (!venue.isActive()) {
+            throw new BusinessRuleException("Venue is not active: " + venue.getCode());
+        }
+        if (!isFuture(request.eventDate())) {
+            throw new BusinessRuleException("Event date must be in the future.");
+        }
+        event.setName(request.name());
+        event.setDescription(request.description());
+        event.setCategory(request.category());
+        event.setEventDate(request.eventDate());
+        event.setMinimumAge(request.minimumAge());
+        event.setVenue(venue);
+        return eventMapper.toResponse(eventRepository.save(event));
     }
 
     /** BR-EVENT-001..006 */
@@ -101,6 +145,15 @@ public class EventServiceImpl implements EventService {
 
     /** BR-EVENT-007..009: DRAFT -> PUBLISHED. */
     @Override
+    @Transactional(readOnly = true)
+    public List<EventSummaryResponse> findAllForAdmin() {
+        return eventRepository.findAllByOrderByEventDateAsc()
+                .stream()
+                .map(eventMapper::toSummary)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public EventResponse publish(String eventCode) {
         Event event = getEvent(eventCode);
@@ -121,6 +174,24 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toResponse(eventRepository.save(event));
     }
 
+    @Override
+    @Transactional
+    public EventResponse changeStatus(String eventCode, ChangeEventStatusRequest request) {
+        Event event = getEvent(eventCode);
+        EventStatus current = event.getStatus();
+        EventStatus target = request.status();
+        boolean validTransition = (current == EventStatus.PUBLISHED
+                && (target == EventStatus.SOLD_OUT || target == EventStatus.FINISHED || target == EventStatus.CANCELLED))
+                || (current == EventStatus.SOLD_OUT
+                && (target == EventStatus.FINISHED || target == EventStatus.CANCELLED));
+        if (!validTransition) {
+            throw new BusinessRuleException(
+                    "Cannot change event status from %s to %s.".formatted(current, target));
+        }
+        event.setStatus(target);
+        return eventMapper.toResponse(eventRepository.save(event));
+    }
+
     /** BR-EVENT-010..011 */
     @Override
     @Transactional
@@ -129,16 +200,26 @@ public class EventServiceImpl implements EventService {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResourceNotFoundException("Artist not found: " + artistId));
 
-        if (event.getStatus() == EventStatus.CANCELLED || event.getStatus() == EventStatus.FINISHED) {
-            throw new BusinessRuleException(
-                    "Cannot add artists to a %s event: %s.".formatted(event.getStatus(), eventCode));
-        }
         if (isAlreadyAssociated(event, artist)) {
             throw new DuplicateResourceException(
                     "Artist %s is already associated with event %s.".formatted(artist.getStageName(), eventCode));
         }
 
         event.addArtist(artist);
+        return eventMapper.toResponse(eventRepository.save(event));
+    }
+
+    @Override
+    @Transactional
+    public EventResponse removeArtist(String eventCode, Long artistId) {
+        Event event = getEvent(eventCode);
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found: " + artistId));
+        if (!isAlreadyAssociated(event, artist)) {
+            throw new BusinessRuleException(
+                    "Artist %s is not associated with event %s.".formatted(artist.getStageName(), eventCode));
+        }
+        event.removeArtist(artist);
         return eventMapper.toResponse(eventRepository.save(event));
     }
 

@@ -1,0 +1,10 @@
+import { Link, useParams } from 'react-router'
+import { useTicket } from '../features/tickets/hooks'
+import { ApiError } from '../lib/http'
+import { moneda } from '../lib/formato'
+import { RUTAS } from '../lib/rutas'
+import { Badge, ErrorState } from '../components/UI'
+import { statusTone, statusNames, ticketTypeNames } from '../lib/dominio'
+import { TicketNoDisponible } from '../components/TicketNoDisponible'
+
+export default function ConfirmacionCompra() { const {ticketCode=''}=useParams(); const q=useTicket(ticketCode); if(q.isPending)return <p className="py-20 text-center text-slate-500">Confirmando tu compra…</p>;if(q.isError)return q.error instanceof ApiError&&[403,404].includes(q.error.status)?<TicketNoDisponible/>:<ErrorState error={q.error} retry={()=>void q.refetch()}/>;return <div className="mx-auto max-w-2xl text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 text-4xl text-emerald-700 dark:text-emerald-300">✓</div><p className="eyebrow mt-6">Compra registrada</p><h1 className="page-title mt-2 text-4xl">¡Tu entrada está lista!</h1><p className="mt-4 text-slate-500">{q.data.eventName} · {ticketTypeNames[q.data.type]}</p><div className="surface mt-8 rounded-2xl p-7 text-left"><div className="flex justify-between gap-3"><span className="text-sm text-slate-500">Código de entrada</span><strong className="text-right">{q.data.ticketCode}</strong></div><div className="mt-4 flex justify-between"><span className="text-sm text-slate-500">Valor registrado</span><strong>{moneda(q.data.price)}</strong></div><div className="mt-4 flex justify-between"><span className="text-sm text-slate-500">Estado</span><Badge tone={statusTone(q.data.status)}>{statusNames[q.data.status]}</Badge></div></div><div className="mt-7 flex flex-wrap justify-center gap-3"><Link to={RUTAS.ticket(q.data.ticketCode)} className="btn-primary">Ver mi entrada</Link><Link to={RUTAS.misTickets} className="btn-secondary">Mis tickets</Link></div></div> }

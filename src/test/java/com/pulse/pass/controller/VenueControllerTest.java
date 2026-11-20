@@ -1,8 +1,11 @@
 package com.pulse.pass.controller;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +39,29 @@ class VenueControllerTest extends AbstractSecuredControllerTest {
     private VenueResponse venue() {
         return new VenueResponse(1L, "VEN-SMR-01", "Marina Convention Center", "Santa Marta",
                 "Calle 1", 3, true);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createVenue_admin_returns201() throws Exception {
+        when(venueService.create(any())).thenReturn(venue());
+        mockMvc.perform(post("/api/venues").contentType(MediaType.APPLICATION_JSON).content("""
+                {"code":"VEN-SMR-01","name":"Marina Convention Center","city":"Santa Marta","address":"Calle 1","capacity":300}
+                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("VEN-SMR-01"))
+                .andExpect(jsonPath("$.active").value(true));
+        verify(venueService).create(any());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void createVenue_user_isForbidden() throws Exception {
+        mockMvc.perform(post("/api/venues").contentType(MediaType.APPLICATION_JSON).content("""
+                {"code":"VEN-SMR-01","name":"Marina Convention Center","city":"Santa Marta","capacity":300}
+                """))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(venueService);
     }
 
     @Test

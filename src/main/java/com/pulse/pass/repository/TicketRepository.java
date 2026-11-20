@@ -15,6 +15,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     /** FR-TKT-002: recuperar por ticketCode unico. */
     Optional<Ticket> findByTicketCode(String ticketCode);
 
+    boolean existsByEvent_EventCode(String eventCode);
+
     /** FR-TKT-006: tickets de un usuario navegando Ticket -> User -> email. */
     List<Ticket> findByUser_Email(String email);
 

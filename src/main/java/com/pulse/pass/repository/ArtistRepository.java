@@ -14,6 +14,8 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
     /** Busqueda por nombre artistico ignorando mayusculas. */
     Optional<Artist> findByStageNameIgnoreCase(String stageName);
 
+    boolean existsByStageNameIgnoreCase(String stageName);
+
     /** BR-ARTIST-002: artistas activos ordenados por nombre artistico. */
     List<Artist> findByActiveTrueOrderByStageNameAsc();
 }

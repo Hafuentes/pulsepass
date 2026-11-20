@@ -1,0 +1,6 @@
+import { Link } from 'react-router'
+import { useActiveVenues } from '../features/venues/hooks'
+import { RUTAS } from '../lib/rutas'
+import { EmptyState, ErrorState, LoadingGrid, SectionTitle } from '../components/UI'
+
+export default function ListaSedes() { const q = useActiveVenues(); return <><SectionTitle eyebrow="Espacios para encontrarnos" title="Nuestras sedes" description="Conoce los lugares donde suceden las experiencias PulsePass."/>{q.isPending ? <LoadingGrid/> : q.isError ? <ErrorState error={q.error}/> : q.data.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{q.data.map((v) => <Link key={v.code} to={RUTAS.sede(v.code)} className="surface card-hover rounded-2xl p-6"><div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-cyan-400/10 text-2xl">⌖</div><h2 className="font-display text-xl font-bold">{v.name}</h2><p className="mt-2 text-sm text-slate-500">{v.city}</p><div className="mt-5 flex justify-between border-t border-slate-200 pt-4 text-sm"><span className="text-slate-500">Capacidad</span><strong>{v.capacity.toLocaleString('es-CO')} personas</strong></div></Link>)}</div> : <EmptyState title="No hay sedes activas" description="Las sedes disponibles aparecerán aquí."/>}</> }

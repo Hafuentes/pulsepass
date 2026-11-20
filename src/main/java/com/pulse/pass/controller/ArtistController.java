@@ -4,12 +4,17 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pulse.pass.dto.response.ArtistResponse;
+import com.pulse.pass.dto.request.CreateArtistRequest;
+import jakarta.validation.Valid;
 import com.pulse.pass.service.ArtistService;
 
 @RestController
@@ -20,6 +25,11 @@ public class ArtistController {
 
     public ArtistController(ArtistService artistService) {
         this.artistService = artistService;
+    }
+
+    @PostMapping
+    public ResponseEntity<ArtistResponse> create(@Valid @RequestBody CreateArtistRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(artistService.create(request));
     }
 
     @GetMapping("/{id}")
