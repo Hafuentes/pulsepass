@@ -1,0 +1,4 @@
+export const categoryNames: Record<string, string> = { MUSIC: 'Música', SPORTS: 'Deportes', TECHNOLOGY: 'Tecnología', EDUCATION: 'Educación', CULTURE: 'Cultura', ENTERTAINMENT: 'Entretenimiento' }
+export const statusTone = (status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'brand' => status === 'PUBLISHED' || status === 'PAID' ? 'success' : status === 'SOLD_OUT' || status === 'USED' ? 'warning' : status === 'CANCELLED' ? 'danger' : 'brand'
+export const statusNames: Record<string, string> = { PUBLISHED: 'Publicado', DRAFT: 'Borrador', SOLD_OUT: 'Agotado', CANCELLED: 'Cancelado', FINISHED: 'Finalizado', PAID: 'Pagado', RESERVED: 'Reservado', USED: 'Usado' }
+export const ticketTypeNames: Record<string, string> = { GENERAL: 'General', VIP: 'VIP', BACKSTAGE: 'Backstage', STUDENT: 'Estudiante' }

@@ -1,0 +1,6 @@
+import { Link } from 'react-router'
+import { useActiveArtists } from '../features/artists/hooks'
+import { RUTAS } from '../lib/rutas'
+import { EmptyState, ErrorState, LoadingGrid, SectionTitle } from '../components/UI'
+
+export default function ListaArtistas() { const q = useActiveArtists(); return <><SectionTitle eyebrow="Voces y talento" title="Conoce a los artistas" description="Descubre quiénes están detrás de las experiencias que te gustan."/>{q.isPending ? <LoadingGrid/> : q.isError ? <ErrorState error={q.error} retry={() => void q.refetch()}/> : q.data.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{q.data.map((a) => <Link key={a.id} to={RUTAS.artista(a.id)} className="surface card-hover rounded-2xl p-6"><div className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-400/20 text-2xl">♫</div><h2 className="font-display text-xl font-bold">{a.stageName}</h2><p className="mt-2 text-sm text-slate-500">{[a.genre,a.country].filter(Boolean).join(' · ') || 'Artista PulsePass'}</p><span className="mt-6 inline-flex text-sm font-semibold text-violet-700">Ver perfil →</span></Link>)}</div> : <EmptyState title="Aún no hay artistas" description="Los perfiles aparecerán aquí cuando estén activos."/>}</> }

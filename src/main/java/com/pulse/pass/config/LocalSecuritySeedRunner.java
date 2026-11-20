@@ -3,6 +3,7 @@ package com.pulse.pass.config;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,14 +70,22 @@ public class LocalSecuritySeedRunner implements CommandLineRunner {
             log.warn("Seed account '{}' skipped: password env var missing or shorter than 12 characters.", username);
             return;
         }
-        if (userRepository.existsByUsername(username)) {
-            log.info("Seed account '{}' already exists; skipped.", username);
-            return;
+        User user = userRepository.findByUsername(username).orElseGet(() ->
+                userRepository.save(new User(username, email, true)));
+
+        // El seed es idempotente: repara roles/credenciales faltantes en la cuenta reservada,
+        // pero nunca reemplaza una contraseña ya existente.
+        if (!credentialRepository.existsById(user.getId())) {
+            credentialRepository.save(new UserCredential(user.getId(), passwordEncoder.encode(password),
+                    LocalDateTime.now(clock)));
         }
-        User user = userRepository.save(new User(username, email, true));
-        credentialRepository.save(new UserCredential(user.getId(), passwordEncoder.encode(password),
-                LocalDateTime.now(clock)));
-        roles.forEach(role -> roleRepository.save(new UserRole(user.getId(), role)));
-        log.info("Seed account '{}' created with roles {}.", username, roles);
+        Set<Role> existingRoles = roleRepository.findByUserId(user.getId()).stream()
+                .map(UserRole::getRole).collect(Collectors.toSet());
+        roles.stream().filter(role -> !existingRoles.contains(role))
+                .forEach(role -> roleRepository.save(new UserRole(user.getId(), role)));
+        if (!user.isActive()) {
+            log.warn("Seed account '{}' exists but is inactive; activate it in the local database before login.", username);
+        }
+        log.info("Seed account '{}' is ready with roles {} (existing password preserved).", username, roles);
     }
 }

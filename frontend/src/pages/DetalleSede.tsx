@@ -1,0 +1,6 @@
+import { Link, useParams } from 'react-router'
+import { useVenue } from '../features/venues/hooks'
+import { RUTAS } from '../lib/rutas'
+import { Badge, ErrorState } from '../components/UI'
+
+export default function DetalleSede() { const { code = '' } = useParams(); const q = useVenue(code); if (q.isPending) return <p className="py-20 text-center text-slate-500">Cargando sede…</p>; if (q.isError) return <ErrorState error={q.error}/>; const v=q.data; return <><Link to={RUTAS.sedes} className="text-sm text-violet-700">← Sedes</Link><div className="surface mt-6 rounded-[2rem] p-8 sm:p-12"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-cyan-400/10 text-3xl">⌖</div><p className="eyebrow mt-7">Sede PulsePass</p><h1 className="page-title mt-2 text-4xl">{v.name}</h1><p className="mt-3 text-slate-500">{v.city}</p><p className="mt-2 text-sm text-slate-500">{v.address || 'Dirección no disponible'}</p><div className="mt-8 flex flex-wrap gap-8"><div><p className="text-xs text-slate-500">Capacidad</p><p className="mt-1 text-2xl font-bold">{v.capacity.toLocaleString('es-CO')}</p></div><div><p className="text-xs text-slate-500">Estado</p><p className="mt-1"><Badge tone={v.active?'success':'neutral'}>{v.active?'Activa':'Inactiva'}</Badge></p></div></div></div></> }

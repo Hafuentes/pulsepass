@@ -1,8 +1,10 @@
 package com.pulse.pass.controller;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +37,28 @@ class ArtistControllerTest extends AbstractSecuredControllerTest {
 
     private ArtistResponse artist() {
         return new ArtistResponse(1L, "Solar Beat", "Colombia", "Electronic", true);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createArtist_admin_returns201() throws Exception {
+        when(artistService.create(any())).thenReturn(artist());
+        mockMvc.perform(post("/api/artists").contentType(MediaType.APPLICATION_JSON).content("""
+                {"stageName":"Solar Beat","country":"Colombia","genre":"Electronic"}
+                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.stageName").value("Solar Beat"))
+                .andExpect(jsonPath("$.active").value(true));
+        verify(artistService).create(any());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void createArtist_user_isForbidden() throws Exception {
+        mockMvc.perform(post("/api/artists").contentType(MediaType.APPLICATION_JSON).content("""
+                {"stageName":"Solar Beat"}
+                """))
+                .andExpect(status().isForbidden());
     }
 
     @Test

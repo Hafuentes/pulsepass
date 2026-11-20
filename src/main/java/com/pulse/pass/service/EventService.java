@@ -7,6 +7,8 @@ import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.pulse.pass.dto.request.CreateEventRequest;
+import com.pulse.pass.dto.request.ChangeEventStatusRequest;
+import com.pulse.pass.dto.request.UpdateEventRequest;
 import com.pulse.pass.dto.response.EventResponse;
 import com.pulse.pass.dto.response.EventSummaryResponse;
 
@@ -15,16 +17,29 @@ public interface EventService {
     @PreAuthorize("hasRole('ADMIN')")
     EventResponse create(CreateEventRequest request);
 
+    @PreAuthorize("hasRole('ADMIN')")
+    EventResponse update(String eventCode, UpdateEventRequest request);
+
     @PostAuthorize("@authz.canViewEvent(returnObject)")
     EventResponse findByCode(String eventCode);
 
     List<EventSummaryResponse> findPublishedEvents();
 
+    /** Listado completo exclusivo de ADMIN para gestionar también borradores. */
+    @PreAuthorize("hasRole('ADMIN')")
+    List<EventSummaryResponse> findAllForAdmin();
+
     @PreAuthorize("hasRole('ADMIN')")
     EventResponse publish(String eventCode);
 
     @PreAuthorize("hasRole('ADMIN')")
+    EventResponse changeStatus(String eventCode, ChangeEventStatusRequest request);
+
+    @PreAuthorize("hasRole('ADMIN')")
     EventResponse addArtist(String eventCode, Long artistId);
+
+    @PreAuthorize("hasRole('ADMIN')")
+    EventResponse removeArtist(String eventCode, Long artistId);
 
     @PostFilter("@authz.canViewEventSummary(filterObject)")
     List<EventSummaryResponse> findByArtist(String stageName);
